@@ -100,8 +100,8 @@ public class GpxTransferUtil {
 
     @Test
     public void test1() {
-        int startYear = 2010;
-        int startMonth = 1;
+        int startYear = 2021;
+        int startMonth = 10;
 
 
         int endYear = 2021;

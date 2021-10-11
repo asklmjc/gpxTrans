@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--日志级别以及优先级排序: OFF > FATAL > ERROR > WARN > INFO > DEBUG > TRACE > ALL -->
+<!--Configuration后面的status，这个用于设置log4j2自身内部的信息输出，可以不设置，当设置成trace时，你会看到log4j2内部各种详细输出-->
+<!--monitorInterval：Log4j能够自动检测修改配置 文件和重新配置本身，设置间隔秒数-->
+<Configuration status="INFO" monitorInterval="30">
+    <!--全局属性-->
+    <Properties>
+        <!--设置日志文件存储路径-->
+        <Property name="LOG_FILE_PATH">./logs</Property>
+        <!--设置日志输出格式-->
+        <Property name="PATTERN_FORMAT">[%d{MM-dd HH:mm:ss:SSS}][%t][%p]%-c{1.}(%L):%m%n</Property>
+        <!--最大归档文件数，超过该值，会删除旧的-->
+        <Property name="MAX_ROLL_NUM">3</Property>
+        <!--最大保留日志文件年龄。超过该数值的.gz文件，会被删除。单位D、H、M、S分别表示天、小时、分钟、秒-->
+        <Property name="MAX_FILE_AGE">30d</Property>
+        <!--文件归档阈值。文件大小超过该值的.log文件会被归档-->
+        <Property name="FILE_SIZE_THRESHOLD">200MB</Property>
+    </Properties>
+
+    <!--配置输出源-->
+    <Appenders>
+        <!--输出到控制台-->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${PATTERN_FORMAT}"/>
+        </Console>
+
+        <!--输出info日志到文件，filePattern旧日志另存文件名-->
+        <RollingFile name="RollingInfoFile" fileName="${LOG_FILE_PATH}/info.log"
+                     filePattern="${LOG_FILE_PATH}/$${date:yyyyMM}/info-%d{MMdd}-%i.log.gz">
+            <!--控制台只输出level及以上级别的信息（onMatch），其他的直接拒绝（onMismatch）-->
+            <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout>
+                <pattern>${PATTERN_FORMAT}</pattern>
+            </PatternLayout>
+            <!--归档触发策略-->
+            <Policies>
+                <SizeBasedTriggeringPolicy size="${FILE_SIZE_THRESHOLD}"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <!--文件自动删除配置-->
+            <DefaultRolloverStrategy max="${MAX_ROLL_NUM}">
+                <Delete basePath="${LOG_FILE_PATH}" maxDepth="2">
+                    <!--删除过期的日志-->
+                    <IfFileName glob="*/*.log.gz" />
+                    <IfLastModified age="${MAX_FILE_AGE}" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!--输出错误日志到文件-->
+        <RollingFile name="RollingErrorFile" fileName="${LOG_FILE_PATH}/error.log"
+                     filePattern="${LOG_FILE_PATH}/error-%d{MMdd}-%i.log.gz">
+            <!--控制台只输出level及以上级别的信息（onMatch），其他的直接拒绝（onMismatch）-->
+            <ThresholdFilter level="error" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout>
+                <pattern>${PATTERN_FORMAT}</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="${FILE_SIZE_THRESHOLD}"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <!--文件自动删除配置-->
+            <DefaultRolloverStrategy max="${MAX_ROLL_NUM}"/>
+        </RollingFile>
+
+    </Appenders>
+    <Loggers>
+        <!--过滤掉spring的一些无用的DEBUG信息-->
+        <Logger name="org.springframework" level="INFO"/>
+        <Logger name="com.zaxxer.hikari" level="INFO"/>
+        <!-- LOG everything at INFO level -->
+        <Root level="ALL">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingInfoFile"/>
+            <AppenderRef ref="RollingErrorFile"/>
+        </Root>
+    </Loggers>
+</Configuration>
